@@ -1,5 +1,5 @@
 # VSRBiodiversity
-This is the official repository for the GECCO 2021 paper "Biodiversity in Evolved Voxel-based Soft Robots".
+This is the official repository for the GECCO (Genetic and Evolutionary Computation Conference-2021) paper "Biodiversity in Evolved Voxel-based Soft Robots".
 
 It relies on:
 
@@ -8,3 +8,6 @@ It relies on:
 * [2D-VSR-Sim](https://github.com/ericmedvet/2dhmsr), for the simulation of VSRs.
 
 This work is partially based on Marco Rochelli's master's thesis (https://github.com/MarcoRochelli/Co-evolution).
+
+## TODO
+Bibliography, if accepted

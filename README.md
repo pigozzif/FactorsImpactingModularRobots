@@ -4,6 +4,11 @@ This is the official repository for the GECCO (Genetic and Evolutionary Computat
 ## Scope
 By running the main file (`Main.java`), you will launch an evolutionary optimization for evolving jointly the body (number and arrangement of the voxels) and brain (the controller, an Artificial Neural Network (ANN)) of Voxel-based Soft Robots (VSRs). At the same time, a number of evolution metadata and interesting features will be saved inside the `output` folder. Features include descriptors of VSRs that we devised as a way of characterizing their shape and behaviour. We employed them (in a supervised learning pipeline) to assign each robot to a species, measure biodiversity in VSRs and study how it mutates as the evolutionary algorithm and the controller representation are changed.
 
+## Structure
+* `src` contains all the source code for the project;
+* `libs` contains the .jar files for some of the dependencies (see below);
+* `Data_Analysis_Notebook.ipynb` is Jupyter Notebook (Python) with some routines and starter code to perform analysis on the evolution output files.
+
 ## Dependencies
 It relies on:
 * [JGEA](https://github.com/ericmedvet/jgea), for the evolutionary optimization;

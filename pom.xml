@@ -19,11 +19,15 @@
             <groupId>it.units.erallab</groupId>
             <artifactId>TwoDimHighlyModularSoftRobots</artifactId>
             <version>1.6.8</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/TwoDimHighlyModularSoftRobots.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>it.units.malelab</groupId>
             <artifactId>JGEA</artifactId>
             <version>1.4.3</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/JGEA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>

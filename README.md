@@ -8,6 +8,7 @@ By running the main file (`Main.java`), you will launch an evolutionary optimiza
 It relies on:
 * [JGEA](https://github.com/ericmedvet/jgea), for the evolutionary optimization;
 * [2D-VSR-Sim](https://github.com/ericmedvet/2dhmsr), for the simulation of VSRs.
+
 The relative jars have already been included in the directory `libs`. See `pom.xml` for more details on dependencies.
 
 ## Usage

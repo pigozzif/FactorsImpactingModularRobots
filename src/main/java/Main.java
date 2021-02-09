@@ -17,7 +17,6 @@ import it.units.malelab.jgea.core.Individual;
 import it.units.malelab.jgea.core.evolver.CMAESEvolver;
 import it.units.malelab.jgea.core.evolver.Evolver;
 import it.units.malelab.jgea.core.evolver.StandardEvolver;
-import it.units.malelab.jgea.core.evolver.StandardWithEnforcedDiversityEvolver;
 import it.units.malelab.jgea.core.evolver.speciation.KMeansSpeciator;
 import it.units.malelab.jgea.core.evolver.speciation.SpeciatedEvolver;
 import it.units.malelab.jgea.core.evolver.stopcondition.Births;
@@ -32,10 +31,8 @@ import it.units.malelab.jgea.core.order.PartialComparator;
 import it.units.malelab.jgea.core.selector.Tournament;
 import it.units.malelab.jgea.core.selector.Worst;
 import it.units.malelab.jgea.core.util.Args;
-import it.units.malelab.jgea.core.util.Misc;
 import it.units.malelab.jgea.distance.LNorm;
 import it.units.malelab.jgea.representation.sequence.FixedLengthListFactory;
-import it.units.malelab.jgea.representation.sequence.UniformCrossover;
 import it.units.malelab.jgea.representation.sequence.numeric.GaussianMutation;
 import it.units.malelab.jgea.representation.sequence.numeric.GeometricCrossover;
 import it.units.malelab.jgea.representation.sequence.numeric.UniformDoubleFactory;
@@ -55,14 +52,15 @@ import java.util.stream.Collectors;
 import org.dyn4j.dynamics.Settings;
 
 public class Main extends Worker {
-    private static final int CACHE_SIZE = 0;
     private static int seed;
+    private static String evolverName;
     private static int nBirths;
     private static double episodeTime;
     private static double frequencyThreshold;
     private static int nFrequencySamples;
-    private static final String statsDir = "./output/posedist/";
-    //private static final String serializedDir = "./output/enforced/serialized";
+    private static final String statsDir = "./output/";
+    private static String  commonFileName;
+    private static String statsFileName;
     private static Settings physicsSettings;
 
     public Main(String[] args) {
@@ -75,40 +73,35 @@ public class Main extends Worker {
 
     public void run() {
         int[] innerNeurons = new int[0];
-        episodeTime = Args.d(this.a("episodeT", "30.0"));
-        nBirths = Args.i(this.a("nBirths", "30000"));
-        seed = Integer.parseInt(this.a("seed", null));
+        seed = Args.i(this.a("seed", null));
+        evolverName = this.a("evolver", null);
+        if (! (evolverName.equals("cmaes") || evolverName.equals("ga") || evolverName.equals("se-geno") ||
+                evolverName.equals("se-shape") || evolverName.equals("se-behaviour"))) {
+            throw new IllegalArgumentException("Evolver name must be one of [cmaes, ga, se-geno, se-shape, se-behaviour]");
+        }
+        String representation = this.a("representation", null);
+        if (! (representation.equals("homogeneous") || representation.equals("heterogeneous"))) {
+            throw new IllegalArgumentException("Representation name must be one of [homogeneous, heterogeneous]");
+        }
+        episodeTime = 30.0D;
+        nBirths = 30000;
         frequencyThreshold = 10.0D;
         nFrequencySamples = 100;
-        String[] sizes = new String[]{"5x5"};
-        String[] controllers = new String[]{"heterogeneous"};
-        String[] sensorsConfig = new String[]{"vel-area-touch"};
-        String[] signals = new String[]{"1"};
+        String size = "5x5";
+        String sensorsConfig = "vel-area-touch";
+        String signals = "1";
         physicsSettings = new Settings();
+        commonFileName = evolverName + "." + seed + "." + representation + "." + size + "." + sensorsConfig + "." + signals;
+        statsFileName = statsDir + commonFileName + ".stats.csv";
 
-        //for (int i=0; i < 10; ++i) {
-        //    seed = i;
-            for (String size : sizes) {
-                for (String controller : controllers) {
-                    for (String signal : signals) {
-                        for (String config : sensorsConfig) {
-                            try {
-                                this.evolve(controller, size, config, signal, innerNeurons);
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }
-        //}
-
+        try {
+            this.evolve(representation, size, sensorsConfig, signals, innerNeurons);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void evolve(String controller, String size, String sensorConfig, String signal, int[] innerNeurons) throws FileNotFoundException {
-        String commonFileName = statsDir.split("/")[2] + "." + seed + "." + controller + "." + size + "." + sensorConfig + "." + signal;
-        String statsFileName = statsDir + commonFileName + ".stats.csv";
-        //String serializedFileName = "./output/enforced/serialized/" + commonFileName + ".serialized.csv";
         int width = Integer.parseInt(size.split("x")[0]);
         int height = Integer.parseInt(size.split("x")[1]);
         List<Sensor> sensors = RobotMapper.getSensors(sensorConfig);
@@ -116,36 +109,68 @@ public class Main extends Worker {
         IndependentFactory<List<Double>> factory = new FixedLengthListFactory<>(mapper.getGenotypeSize(), new UniformDoubleFactory(-1.0D, 1.0D));
         Function<Robot<?>, Outcome> trainingTask = new Locomotion(episodeTime, Locomotion.createTerrain("flat"), physicsSettings);
 
-        Listener<? super List<Double>, ? super Robot<?>, ? super Outcome> newListener = new PrintStreamPopulationListener<List<Double>, Robot<?>, Outcome>(new PrintStreamListener<>(new PrintStream(statsFileName), false, 1000000000, ",", ",", List.of(new Basic(), new Population(), new Diversity())), (individual) ->
-            outcomeTransformer(trainingTask.apply(SerializationUtils.clone(individual.getSolution())), frequencyThreshold, nFrequencySamples),
-        (individual) -> List.of(new Item("shape.static", printBodies(Utils.cropGrid((individual.getSolution()).getVoxels(), Objects::nonNull), Objects::nonNull), "%s")/*, new Item("serialized.genotype", SerializationUtils.serialize(individual.getGenotype(), Mode.GZIPPED_JSON), "%s")*/));
-        //Listener newSerializedListener = (new PrintStreamPopulationListener(new PrintStreamListener(new PrintStream(serializedFileName), false, 1000000000, ",", ",", List.of(new Basic(), new Population(), new Diversity())), new Function[]{(i) -> {
-        //    return List.of(new Item("robot.id", System.identityHashCode(i), "%d"), new Item("serialized.genotype", SerializationUtils.serialize(i.getGenotype(), Mode.GZIPPED_JSON), "%s"));
-        //}})).then(newListener);
-
         try {
             Stopwatch stopwatch = Stopwatch.createStarted();
             L.info(String.format("Starting %s", commonFileName));
-            int popSize = 100;
-            Evolver<List<Double>, Robot<?>, Outcome> evolver = new SpeciatedEvolver/*new StandardEvolver*/<List<Double>, Robot<?>, Outcome>/*new CMAESEvolver<>*/(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), popSize, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D),
-                    5, new KMeansSpeciator<>(10, 200, new LNorm(2), individual -> {
-                    //    List<Double> g = individual.getGenotype();
-                        //return individual.getFitness().getCenterPowerSpectrum(Component.Y, 0, frequencyThreshold, nFrequencySamples).stream().mapToDouble(Outcome.Mode::getStrength).toArray();
-                        return individual.getFitness().getAveragePosture().stream().mapToDouble(b -> (b.getValue()) ? 1.0 : 0.0).toArray();
-                    //    double[] out = new double[g.size()];
-                    //    for (int i=0; i < g.size(); ++i) {
-                    //        out[i] = g.get(i);
-                    //    }
-                    //    return out;
-            }), 0.75);
-            //        new Tournament(5), new Worst(), popSize, true);//, 100);
-            Collection<Robot<?>> solutions = evolver.solve(trainingTask/*.andThen(Outcome::getDistance)*/, new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+            Collection<Robot<?>> solutions = switch (evolverName) {
+                case "cmaes" -> this.evolveCMAES(factory, mapper, trainingTask);
+                case "ga" -> this.evolveGA(factory, mapper, trainingTask);
+                case "se-geno" -> this.evolveSEgeno(factory, mapper, trainingTask);
+                case "se-shape" -> this.evolveSEshape(factory, mapper, trainingTask);
+                default -> this.evolveSEbehaviour(factory, mapper, trainingTask);
+            };
             L.info(String.format("Done %s: %d solutions in %4ds", commonFileName, solutions.size(), stopwatch.elapsed(TimeUnit.SECONDS)));
         }
         catch (ExecutionException | InterruptedException e) {
             L.severe(String.format("Cannot complete %s due to %s", commonFileName, e));
             e.printStackTrace();
         }
+    }
+
+    private Collection<Robot<?>> evolveCMAES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException, ExecutionException, InterruptedException {
+        Listener<? super List<Double>, ? super Robot<?>, ? super Double> newListener = createListener(trainingTask);
+        Evolver<List<Double>, Robot<?>, Double> evolver = new CMAESEvolver<>(mapper, factory, PartialComparator.from(Double.class).reversed().comparing(Individual::getFitness));
+        return evolver.solve(trainingTask.andThen(Outcome::getDistance), new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+    }
+
+    private Collection<Robot<?>> evolveGA(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException, ExecutionException, InterruptedException {
+        Listener<? super List<Double>, ? super Robot<?>, ? super Double> newListener = createListener(trainingTask);
+        Evolver<List<Double>, Robot<?>, Double> evolver = new StandardEvolver<List<Double>, Robot<?>, Double>(mapper, factory, PartialComparator.from(Double.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D), new Tournament(5), new Worst(), 100, true);
+        return evolver.solve(trainingTask.andThen(Outcome::getDistance), new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+    }
+
+    private Collection<Robot<?>> evolveSEgeno(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException, ExecutionException, InterruptedException {
+        Listener<? super List<Double>, ? super Robot<?>, ? super Double> newListener = createListener(trainingTask);
+        Evolver<List<Double>, Robot<?>, Double> evolver = new SpeciatedEvolver<List<Double>, Robot<?>, Double>(mapper, factory, PartialComparator.from(Double.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D),
+                5, new KMeansSpeciator<>(10, 200, new LNorm(2), individual -> {
+                                        List<Double> g = individual.getGenotype();
+                                        double[] out = new double[g.size()];
+                                        for (int i = 0; i < g.size(); ++i) {
+                                          out[i] = g.get(i);
+                                        }
+                                        return out;
+                                    }), 0.75);
+        return evolver.solve(trainingTask.andThen(Outcome::getDistance), new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+    }
+
+    private Collection<Robot<?>> evolveSEshape(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException, ExecutionException, InterruptedException {
+        Listener<? super List<Double>, ? super Robot<?>, ? super Outcome> newListener = createListener(trainingTask);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new SpeciatedEvolver<List<Double>, Robot<?>, Outcome>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D),
+                5, new KMeansSpeciator<>(10, 200, new LNorm(2), individual -> individual.getFitness().getAveragePosture().stream().mapToDouble(b -> (b.getValue()) ? 1.0 : 0.0).toArray()), 0.75);
+        return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+    }
+
+    private Collection<Robot<?>> evolveSEbehaviour(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException, ExecutionException, InterruptedException {
+        Listener<? super List<Double>, ? super Robot<?>, ? super Outcome> newListener = createListener(trainingTask);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new SpeciatedEvolver<List<Double>, Robot<?>, Outcome>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D),
+                5, new KMeansSpeciator<>(10, 200, new LNorm(2), individual -> individual.getFitness().getCenterPowerSpectrum(Component.Y, 0, frequencyThreshold, nFrequencySamples).stream().mapToDouble(Outcome.Mode::getStrength).toArray()), 0.75);
+        return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, Listener.onExecutor(newListener, this.executorService));
+    }
+
+    private static <F> Listener<? super List<Double>, ? super Robot<?>, ? super F> createListener(Function<Robot<?>, Outcome> trainingTask) throws FileNotFoundException {
+        return new PrintStreamPopulationListener<List<Double>, Robot<?>, F>(new PrintStreamListener<>(new PrintStream(statsFileName), false, 1000000000, ",", ",", List.of(new Basic(), new Population(), new Diversity())), (individual) ->
+                outcomeTransformer(trainingTask.apply(SerializationUtils.clone(individual.getSolution())), frequencyThreshold, nFrequencySamples),
+                (individual) -> List.of(new Item("shape.static", printBodies(Utils.cropGrid((individual.getSolution()).getVoxels(), Objects::nonNull), Objects::nonNull), "%s"), new Item("serialized.genotype", SerializationUtils.serialize(individual.getGenotype(), Mode.GZIPPED_JSON), "%s")));
     }
 
     public static List<Item> outcomeTransformer(Outcome o, double frequencyThreshold, int nSamples) {

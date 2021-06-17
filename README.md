@@ -31,5 +31,5 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 * seed: the random seed for the experiment.
 * threads: the number of threads to perform evolution with. Defaults to the number of available cores on the current CPU. Parallelization is taken care by JGEA and implements a distributed fitness assessment.
 
-## TODO
-Bibliography, if accepted
+## Bibliography
+Medvet, Pigozzi, Bartoli, Rochelli. "Biodiversity in Evolved Voxel-based Soft Robots", ACM Genetic and Evolutionary Computation Conference (GECCO), 2021

@@ -33,3 +33,13 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 
 ## Bibliography
 Medvet, Pigozzi, Bartoli, Rochelli. "Biodiversity in Evolved Voxel-based Soft Robots", ACM Genetic and Evolutionary Computation Conference (GECCO), 2021
+```
+@inproceedings{medvet2021biodiversity,
+    author = {Medvet, Eric and Bartoli, Alberto and Pigozzi, Federico and Rochelli, Marco},
+    title = {Biodiversity in Evolved Voxel-Based Soft Robots}, 
+    year = {2021}, isbn = {9781450383509},
+    booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference},
+    pages = {129–137},
+    series = {GECCO '21}
+}
+```

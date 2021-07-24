@@ -87,7 +87,7 @@ public class Main extends Worker {
         nBirths = 30000;
         frequencyThreshold = 10.0D;
         nFrequencySamples = 100;
-        String size = "5x5";
+        String size = "10x10";
         String sensorsConfig = "vel-area-touch";
         String signals = "1";
         physicsSettings = new Settings();

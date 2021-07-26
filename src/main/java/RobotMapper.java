@@ -1,3 +1,4 @@
+
 import it.units.erallab.hmsrobots.core.controllers.MultiLayerPerceptron;
 import it.units.erallab.hmsrobots.core.objects.Robot;
 import it.units.erallab.hmsrobots.core.sensors.*;
@@ -6,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+
 public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
+
     protected final boolean heterogeneous;
     protected final boolean hasPositionSensor;
     protected final int width;
@@ -34,7 +37,7 @@ public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
     }
 
     public int getGenotypeSize() {
-        return getGenotypeSize(heterogeneous, hasPositionSensor, sensors, innerNeurons, signals, width, height);
+        return getGenotypeSize(this.heterogeneous, this.hasPositionSensor, this.sensors, this.innerNeurons, this.signals, this.width, this.height);
     }
 
     public static List<Sensor> getSensors(String sensorConfig) {
@@ -58,7 +61,6 @@ public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
         else if (serialized.size() == getGenotypeSize(false, false, sensors, innerNeurons, signals, width, height)) {
             return (new DoubleMapper(false, width, height, sensors, innerNeurons, signals)).apply(serialized);
         }
-        //System.out.println("here");
         return (new DoublePositionMapper(width, height, sensors, innerNeurons, signals)).apply(serialized);
     }
 

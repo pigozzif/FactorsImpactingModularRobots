@@ -7,6 +7,7 @@
     <groupId>it.units.erallab</groupId>
     <artifactId>VSRBiodiversity</artifactId>
     <version>0.1.0</version>
+    <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,14 +19,14 @@
         <dependency>
             <groupId>it.units.erallab</groupId>
             <artifactId>TwoDimHighlyModularSoftRobots</artifactId>
-            <version>1.6.8</version>
+            <version>1.9.2</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/TwoDimHighlyModularSoftRobots.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>it.units.malelab</groupId>
             <artifactId>JGEA</artifactId>
-            <version>1.4.3</version>
+            <version>1.7.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/JGEA.jar</systemPath>
         </dependency>

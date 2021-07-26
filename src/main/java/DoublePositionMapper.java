@@ -1,3 +1,4 @@
+
 import it.units.erallab.hmsrobots.core.controllers.DistributedSensing;
 import it.units.erallab.hmsrobots.core.controllers.MultiLayerPerceptron;
 import it.units.erallab.hmsrobots.core.controllers.MultiLayerPerceptron.ActivationFunction;
@@ -15,15 +16,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.SerializationUtils;
 
+
 public class DoublePositionMapper extends RobotMapper {
+
     public DoublePositionMapper(int width, int height, List<Sensor> sensors, int[] innerNeurons, int signals) {
         super(false, true, width, height, sensors, innerNeurons, signals);
     }
 
     public Robot<?> apply(List<Double> genotype) {
-        int nOfInputs = this.signals * 4 + this.sensors.stream().mapToInt((s) -> {
-            return s.domains().length;
-        }).sum() + 2;
+        int nOfInputs = this.signals * 4 + this.sensors.stream().mapToInt((s) -> s.domains().length).sum() + 2;
         int nOfOutputs = this.signals * 4 + 1;
         if (genotype.size() != this.getGenotypeSize()) {
             throw new IllegalArgumentException("Sensor list has wrong dimension");
@@ -81,7 +82,8 @@ public class DoublePositionMapper extends RobotMapper {
                 distributedSensing.getFunctions().set(entry.getX(), entry.getY(), mlp);
             }
 
-            return new Robot<>(distributedSensing, body);
+            return new Robot<>(distributedSensing, SerializationUtils.clone(body));
         }
     }
+
 }

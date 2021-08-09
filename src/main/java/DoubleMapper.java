@@ -20,21 +20,21 @@ public class DoubleMapper extends RobotMapper {
 
     @Override
     public Robot<?> apply(List<Double> genotype) {
-        int nOfInputs = signals * 4 + sensors.stream().mapToInt(s -> s.domains().length).sum();
-        int nOfOutputs = signals * 4 + 1;
-        int nOfVoxelWeights = MultiLayerPerceptron.countWeights(MultiLayerPerceptron.countNeurons(nOfInputs, innerNeurons, nOfOutputs));
+        int nOfInputs = this.signals * 4 + this.sensors.stream().mapToInt(s -> s.domains().length).sum();
+        int nOfOutputs = this.signals * 4 + 1;
+        int nOfVoxelWeights = MultiLayerPerceptron.countWeights(MultiLayerPerceptron.countNeurons(nOfInputs, this.innerNeurons, nOfOutputs));
 
-        SensingVoxel sensingVoxel = new SensingVoxel(sensors);
+        SensingVoxel sensingVoxel = new SensingVoxel(this.sensors);
 
         int c = 0;
-        Grid<SensingVoxel> body = Grid.create(width, height);
+        Grid<SensingVoxel> body = Grid.create(this.width, this.height);
         // fill voxels only for entries > 0.5
         for (double entry : genotype) {
-            if (c < width * height) {
+            if (c < this.width * this.height) {
                 if (entry > THRESHOLD) {
-                    body.set(c % width, c / width, SerializationUtils.clone(sensingVoxel));
+                    body.set(c % this.width, c / this.width, SerializationUtils.clone(sensingVoxel));
                 } else {
-                    body.set(c % width, c / width, null);
+                    body.set(c % this.width, c / this.width, null);
                 }
                 c = c + 1;
             }
@@ -50,24 +50,24 @@ public class DoubleMapper extends RobotMapper {
         body = Utils.gridLargestConnected(body, Objects::nonNull);
 
         // create a distributed controller
-        DistributedSensing distributedSensing = new DistributedSensing(body, signals);
+        DistributedSensing distributedSensing = new DistributedSensing(body, this.signals);
         for (Grid.Entry<SensingVoxel> entry : body) {
             MultiLayerPerceptron mlp = new MultiLayerPerceptron(
                     MultiLayerPerceptron.ActivationFunction.TANH,
                     nOfInputs,
-                    innerNeurons,
+                    this.innerNeurons,
                     nOfOutputs
             );
 
             // create an array of doubles from the list of the genotype
-            List<Double> w = genotype.subList(width * height, genotype.size());
+            List<Double> w = genotype.subList(this.width * this.height, genotype.size());
             double[] weights = new double[w.size()];
             for (int i = 0; i < weights.length; i++) {
                 weights[i] = w.get(i);
             }
 
-            if (heterogeneous) {  // different weights for every voxel
-                int from = entry.getX() * nOfVoxelWeights + entry.getY() * width * nOfVoxelWeights;
+            if (this.heterogeneous) {  // different weights for every voxel
+                int from = entry.getX() * nOfVoxelWeights + entry.getY() * this.width * nOfVoxelWeights;
                 int to = from + nOfVoxelWeights;
                 double[] voxelWeights = Arrays.copyOfRange(weights, from, to);
                 mlp.setParams(voxelWeights);

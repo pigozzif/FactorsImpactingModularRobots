@@ -24,23 +24,17 @@ import it.units.malelab.jgea.core.selector.Tournament;
 import it.units.malelab.jgea.core.selector.Worst;
 import it.units.malelab.jgea.core.util.Args;
 import it.units.malelab.jgea.core.util.Misc;
-import it.units.malelab.jgea.core.util.Pair;
 import it.units.malelab.jgea.distance.LNorm;
 import it.units.malelab.jgea.representation.sequence.FixedLengthListFactory;
 import it.units.malelab.jgea.representation.sequence.numeric.GaussianMutation;
 import it.units.malelab.jgea.representation.sequence.numeric.GeometricCrossover;
 import it.units.malelab.jgea.representation.sequence.numeric.UniformDoubleFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.dyn4j.dynamics.Settings;
 
@@ -56,7 +50,7 @@ public class Main extends Worker {
     private static final double frequencyThreshold = 10.0D;
     private static final int nFrequencySamples = 100;
     private static String  bestFileName = "./output/";
-    private static String lastFileName = "./output/";
+    private static String lastFileName = "";
     private static Settings physicsSettings;
 
     public Main(String[] args) {
@@ -80,8 +74,8 @@ public class Main extends Worker {
             throw new IllegalArgumentException("Representation name must be one of [homogeneous, heterogeneous]");
         }
         episodeTime = 30.0D;
-        nBirths = 200;
-        String size = "10x10";
+        nBirths = 30000;
+        String size = this.a("size", "5x5");
         String sensorsConfig = "vel-area-touch";
         String signals = "1";
         physicsSettings = new Settings();
@@ -115,8 +109,11 @@ public class Main extends Worker {
                 default -> this.evolveSEbehaviour(factory, mapper, trainingTask);
             };
             L.info(String.format("Done %s: %d solutions in %4ds", bestFileName, solutions.size(), stopwatch.elapsed(TimeUnit.SECONDS)));
+            // save last population to file (one line per individual)
+            AuxUtils.saveLastPopulation(solutions, lastFileName, trainingTask, 0.0, frequencyThreshold, nFrequencySamples);
+            L.info(String.format("Done %s", lastFileName));
         }
-        catch (ExecutionException | InterruptedException e) {
+        catch (ExecutionException | InterruptedException | IOException e) {
             L.severe(String.format("Cannot complete %s due to %s", bestFileName, e));
             e.printStackTrace();
         }
@@ -175,17 +172,8 @@ public class Main extends Worker {
                     NamedFunction.then(best(), AuxUtils.serializationFunction(true))
             )), new File(bestFileName)
             );
-        // file listener (all individuals of last iteration)
-        factory = factory.and(Listener.Factory.forEach((Event<?, ? extends Robot<?>, ? extends Outcome>) event -> event.getOrderedPopulation().all().stream()
-                .map(i -> Pair.of(event, i))
-                .collect(Collectors.toList()), new CSVPrinter<>(Misc.concat(
-                NamedFunction.then(f("individual", Pair::second), individualFunctions),
-                NamedFunction.then(f("individual", Pair::second), AuxUtils.serializationFunction(true)))
-                //NamedFunction.then(as(Outcome.class).of(fitness()).of(all()), basicOutcomeFunctions),
-                //NamedFunction.then(as(Outcome.class).of(fitness()).of(all()), detailedOutcomeFunctions),
-                //NamedFunction.then(all(), AuxUtils.serializationFunction(true))
-        ), new File(lastFileName)
-        )).onLast();
+        // file listener for last iteration population (one line per individual)
+        factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(AuxUtils.lastPopulationFunctions())), new File(lastFileName)).onLast());
         return factory;
     }
 

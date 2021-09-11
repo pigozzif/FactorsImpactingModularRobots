@@ -18,6 +18,7 @@ The relative jars have already been included in the directory `libs`. See `pom.x
 
 ## Usage
 This is a table of possible command-line arguments:
+
 Argument       | Type                                         | Optional (yes/no) | Default
 ---------------|----------------------------------------------|-------------------|-------------------------
 evolver        | {cmaes, ga, se-geno, se-shape, se-behaviour} | no                | -

@@ -9,10 +9,7 @@ import it.units.erallab.hmsrobots.tasks.locomotion.Outcome.Component;
 import it.units.malelab.jgea.Worker;
 import it.units.malelab.jgea.core.IndependentFactory;
 import it.units.malelab.jgea.core.Individual;
-import it.units.malelab.jgea.core.evolver.CMAESEvolver;
-import it.units.malelab.jgea.core.evolver.Event;
-import it.units.malelab.jgea.core.evolver.Evolver;
-import it.units.malelab.jgea.core.evolver.StandardEvolver;
+import it.units.malelab.jgea.core.evolver.*;
 import it.units.malelab.jgea.core.evolver.speciation.KMeansSpeciator;
 import it.units.malelab.jgea.core.evolver.speciation.SpeciatedEvolver;
 import it.units.malelab.jgea.core.evolver.stopcondition.Births;
@@ -40,17 +37,18 @@ import org.dyn4j.dynamics.Settings;
 
 import static it.units.malelab.jgea.core.listener.NamedFunctions.*;
 
-
+// TODO: all file does not contain basic information, so must rely on population size to deduce iterations (not safe for SE)
 public class Main extends Worker {
 
     private static int seed;
     private static String evolverName;
     private static int nBirths;
+    private static String terrain;
     private static double episodeTime;
     private static final double frequencyThreshold = 10.0D;
     private static final int nFrequencySamples = 100;
-    private static String  bestFileName = "./output/";
-    private static String lastFileName = "";
+    private static String  bestFileName = "./output/gmm/";
+    private static String allFileName = "";
     private static Settings physicsSettings;
 
     public Main(String[] args) {
@@ -65,22 +63,16 @@ public class Main extends Worker {
         int[] innerNeurons = new int[0];
         seed = Args.i(this.a("seed", null));
         evolverName = this.a("evolver", null);
-        if (! (evolverName.equals("cmaes") || evolverName.equals("ga") || evolverName.equals("se-geno") ||
-                evolverName.equals("se-shape") || evolverName.equals("se-behaviour"))) {
-            throw new IllegalArgumentException("Evolver name must be one of [cmaes, ga, se-geno, se-shape, se-behaviour]");
-        }
         String representation = this.a("representation", null);
-        if (! (representation.equals("homogeneous") || representation.equals("heterogeneous"))) {
-            throw new IllegalArgumentException("Representation name must be one of [homogeneous, heterogeneous]");
-        }
         episodeTime = 30.0D;
-        nBirths = 30000;
+        nBirths = Args.i(this.a("births", null));
+        terrain = this.a("terrain", "flat");
         String size = this.a("size", "5x5");
         String sensorsConfig = "vel-area-touch";
         String signals = "1";
         physicsSettings = new Settings();
-        bestFileName += evolverName + "." + seed + "." + representation + "." + size + "." + sensorsConfig + "." + signals;
-        lastFileName += bestFileName + "." + "last.csv";
+        bestFileName += String.join(".", evolverName, String.valueOf(seed), representation, size, sensorsConfig, signals, terrain);
+        allFileName += bestFileName + "." + "all.csv";
         bestFileName += ".csv";
 
         try {
@@ -90,37 +82,35 @@ public class Main extends Worker {
         }
     }
 
-    private void evolve(String controller, String size, String sensorConfig, String signal, int[] innerNeurons) throws FileNotFoundException {
+    private void evolve(String representation, String size, String sensorConfig, String signal, int[] innerNeurons) throws FileNotFoundException {
         int width = Integer.parseInt(size.split("x")[0]);
         int height = Integer.parseInt(size.split("x")[1]);
         List<Sensor> sensors = RobotMapper.getSensors(sensorConfig);
-        RobotMapper mapper = RobotMapper.createMapper(controller, width, height, sensors, innerNeurons, Integer.parseInt(signal));
-        IndependentFactory<List<Double>> factory = new FixedLengthListFactory<>(mapper.getGenotypeSize(), new UniformDoubleFactory(-1.0D, 1.0D));
-        Function<Robot<?>, Outcome> trainingTask = new Locomotion(episodeTime, Locomotion.createTerrain("flat"), physicsSettings);
+        RobotMapper mapper = RobotMapper.createMapper(representation, width, height, sensors, innerNeurons, Integer.parseInt(signal));
+        IndependentFactory<List<Double>> factory = (representation.contains("direct")) ? new FixedLengthListFactory<>(mapper.getGenotypeSize(), new UniformDoubleFactory(-1.0D, 1.0D)) : new GaussianFactory(mapper.getGenotypeSize());
+        Function<Robot<?>, Outcome> trainingTask = new Locomotion(episodeTime, Locomotion.createTerrain(terrain), physicsSettings);
 
         try {
             Stopwatch stopwatch = Stopwatch.createStarted();
             L.info(String.format("Starting %s", bestFileName));
             Collection<Robot<?>> solutions = switch (evolverName) {
-                case "cmaes" -> this.evolveCMAES(factory, mapper, trainingTask);
+                case "es" -> this.evolveCMAES(factory, mapper, trainingTask);
                 case "ga" -> this.evolveGA(factory, mapper, trainingTask);
                 case "se-geno" -> this.evolveSEgeno(factory, mapper, trainingTask);
                 case "se-shape" -> this.evolveSEshape(factory, mapper, trainingTask);
-                default -> this.evolveSEbehaviour(factory, mapper, trainingTask);
+                case "se-behaviour" -> this.evolveSEbehaviour(factory, mapper, trainingTask);
+                default -> throw new IllegalArgumentException("Unknown evolver name: " + evolverName);
             };
             L.info(String.format("Done %s: %d solutions in %4ds", bestFileName, solutions.size(), stopwatch.elapsed(TimeUnit.SECONDS)));
-            // save last population to file (one line per individual)
-            AuxUtils.saveLastPopulation(solutions, lastFileName, trainingTask, 0.0, frequencyThreshold, nFrequencySamples);
-            L.info(String.format("Done %s", lastFileName));
         }
-        catch (ExecutionException | InterruptedException | IOException e) {
+        catch (ExecutionException | InterruptedException e) {
             L.severe(String.format("Cannot complete %s due to %s", bestFileName, e));
             e.printStackTrace();
         }
     }
 
     private Collection<Robot<?>> evolveCMAES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new CMAESEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness));
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new BasicEvolutionaryStrategy<>(/*new CMAESEvolver<>(*/mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 
@@ -154,26 +144,37 @@ public class Main extends Worker {
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 
-    private Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> createListenerFactory() {
-        Function<Outcome, Double> fitnessFunction = Outcome::getDistance;
+    private static Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> createListenerFactory() {
         // consumers
+        Function<Outcome, Double> fitnessFunction = Outcome::getDistance;
         List<NamedFunction<Event<?, ? extends Robot<?>, ? extends Outcome>, ?>> basicFunctions = AuxUtils.basicFunctions();
+        List<NamedFunction<Individual<?, ? extends Robot<?>, ? extends Outcome>, ?>> basicIndividualFunctions = AuxUtils.individualFunctions(fitnessFunction);
         List<NamedFunction<Event<?, ? extends Robot<?>, ? extends Outcome>, ?>> populationFunctions = AuxUtils.populationFunctions(fitnessFunction);
-        List<NamedFunction<Individual<?, ? extends Robot<?>, ? extends Outcome>, ?>> individualFunctions = AuxUtils.individualFunctions(fitnessFunction);
         List<NamedFunction<Outcome, ?>> basicOutcomeFunctions = AuxUtils.basicOutcomeFunctions();
-        List<NamedFunction<Outcome, ?>> detailedOutcomeFunctions = AuxUtils.detailedOutcomeFunctions(0, frequencyThreshold, nFrequencySamples);
-        // file listener (one best per iteration)
-        Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> factory = new CSVPrinter<>(Misc.concat(List.of(
+        List<NamedFunction<Outcome, ?>> detailedOutcomeFunctions = AuxUtils.detailedOutcomeFunctions(0.0, frequencyThreshold, nFrequencySamples);
+        Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> factory = Listener.Factory.deaf();
+        // file listeners
+        if (bestFileName != null) {
+            factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(
                     basicFunctions,
                     populationFunctions,
-                    NamedFunction.then(best(), individualFunctions),
+                    NamedFunction.then(best(), basicIndividualFunctions),
                     NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), basicOutcomeFunctions),
                     NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), detailedOutcomeFunctions),
                     NamedFunction.then(best(), AuxUtils.serializationFunction(true))
             )), new File(bestFileName)
-            );
-        // file listener for last iteration population (one line per individual)
-        factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(AuxUtils.lastPopulationFunctions())), new File(lastFileName)).onLast());
+            ));
+        }
+        if (allFileName != null) {
+            factory = factory.and(Listener.Factory.forEach(
+                    event -> event.getOrderedPopulation().all(),
+                    new CSVPrinter<>(Misc.concat(List.of(
+                            NamedFunction.then(as(Outcome.class).of(fitness()), detailedOutcomeFunctions),
+                            NamedFunction.then(as(Outcome.class).of(fitness()), basicOutcomeFunctions),
+                            basicIndividualFunctions,
+                            AuxUtils.serializationFunction(true)
+                            )), new File(allFileName))));
+        }
         return factory;
     }
 

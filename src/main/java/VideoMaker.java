@@ -49,17 +49,18 @@ public class VideoMaker {
 
   private static final Logger L = Logger.getLogger(VideoMaker.class.getName());
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     //get params
-    String inputFileName = a(args, "inputFile", null);
+    parseRobotFromFile(a(args, "inputFile", null));
+    String inputFileName = "to_film.txt";
     String outputFileName = a(args, "outputFile", null);
     String serializedRobotColumn = a(args, "serializedRobotColumnName", "serialized");
     String terrainName = a(args, "terrain", "flat");
     String transformationName = a(args, "transformation", "identity");
-    double startTime = d(a(args, "startTime", "0.0"));
-    double endTime = d(a(args, "endTime", "30.0"));
-    int w = i(a(args, "w", "600"));
-    int h = i(a(args, "h", "400"));
+    double startTime = d(a(args, "startTime", "5.0"));
+    double endTime = d(a(args, "endTime", "15.0"));
+    int w = i(a(args, "w", "200"));
+    int h = i(a(args, "h", "130"));
     int frameRate = i(a(args, "frameRate", "30"));
     String encoderName = a(args, "encoder", VideoUtils.EncoderFacility.FFMPEG_LARGE.name());
     SerializationUtils.Mode mode = SerializationUtils.Mode.valueOf(a(args, "deserializationMode", SerializationUtils.Mode.GZIPPED_JSON.name()).toUpperCase());
@@ -68,11 +69,7 @@ public class VideoMaker {
     List<CSVRecord> records = null;
     List<String> headers = null;
     try {
-      if (inputFileName != null) {
-        reader = new FileReader(inputFileName);
-      } else {
-        reader = new InputStreamReader(System.in);
-      }
+      reader = new FileReader(inputFileName);
       CSVParser csvParser = CSVFormat.DEFAULT.withDelimiter(';').withFirstRecordAsHeader().parse(reader);
       records = csvParser.getRecords();
       headers = csvParser.getHeaderNames();
@@ -90,7 +87,7 @@ public class VideoMaker {
     }
     L.info(String.format("Read %d data lines from %s with columns %s",
             records.size(),
-            (inputFileName != null) ? inputFileName : "stdin",
+            inputFileName,
             headers
     ));
     //check columns
@@ -182,6 +179,25 @@ public class VideoMaker {
       executor.shutdownNow();
       uiExecutor.shutdownNow();
     }
+  }
+
+  private static void parseRobotFromFile(String file) throws IOException {
+    BufferedWriter writer = new BufferedWriter(new FileWriter("to_film.txt"));
+    Reader reader = new FileReader(file);
+    List<CSVRecord> records;
+    CSVParser csvParser = CSVFormat.DEFAULT.withDelimiter(';').withFirstRecordAsHeader().parse(reader);
+    records = csvParser.getRecords();
+    String robot;
+    if (file.contains(".all.")) {
+      robot = records.get(new Random(0).nextInt(records.size())).get("solution→serialized");
+    }
+    else {
+      robot = records.get(records.size() - 1).get("best→solution→serialized");
+    }
+    reader.close();
+    writer.write("x;y;serialized\n");
+    writer.write("0;0;" + robot);
+    writer.close();
   }
 
 }

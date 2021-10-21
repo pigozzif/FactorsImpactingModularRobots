@@ -20,7 +20,7 @@ import org.apache.commons.lang3.SerializationUtils;
 public class DoublePositionMapper extends RobotMapper {
 
     public DoublePositionMapper(int width, int height, List<Sensor> sensors, int[] innerNeurons, int signals) {
-        super(false, true, width, height, sensors, innerNeurons, signals);
+        super(false, true, true, width, height, sensors, innerNeurons, signals);
     }
 
     public Robot<?> apply(List<Double> genotype) {

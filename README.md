@@ -18,6 +18,7 @@ The relative jars have already been included in the directory `libs`. See `pom.x
 
 ## Usage
 This is a table of possible command-line arguments:
+
 Argument       | Type                                         | Optional (yes/no) | Default
 ---------------|----------------------------------------------|-------------------|-------------------------
 evolver        | {cmaes, ga, se-geno, se-shape, se-behaviour} | no                | -
@@ -32,7 +33,7 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 * threads: the number of threads to perform evolution with. Defaults to the number of available cores on the current CPU. Parallelization is taken care by JGEA and implements a distributed fitness assessment.
 
 ## Bibliography
-Medvet, Pigozzi, Bartoli, Rochelli. "Biodiversity in Evolved Voxel-based Soft Robots", ACM Genetic and Evolutionary Computation Conference (GECCO), 2021
+Medvet, Pigozzi, Bartoli, Rochelli; [Biodiversity in Evolved Voxel-based Soft Robots](https://dl.acm.org/doi/10.1145/3449639.3459315?sid=SCITRUS); ACM Genetic and Evolutionary Computation Conference (GECCO); 2021
 ```
 @inproceedings{medvet2021biodiversity,
     author = {Medvet, Eric and Bartoli, Alberto and Pigozzi, Federico and Rochelli, Marco},

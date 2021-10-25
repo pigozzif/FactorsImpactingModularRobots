@@ -59,8 +59,8 @@ public class VideoMaker {
     String transformationName = a(args, "transformation", "identity");
     double startTime = d(a(args, "startTime", "5.0"));
     double endTime = d(a(args, "endTime", "15.0"));
-    int w = i(a(args, "w", "200"));
-    int h = i(a(args, "h", "130"));
+    int w = i(a(args, "w", "900"));
+    int h = i(a(args, "h", "600"));
     int frameRate = i(a(args, "frameRate", "30"));
     String encoderName = a(args, "encoder", VideoUtils.EncoderFacility.FFMPEG_LARGE.name());
     SerializationUtils.Mode mode = SerializationUtils.Mode.valueOf(a(args, "deserializationMode", SerializationUtils.Mode.GZIPPED_JSON.name()).toUpperCase());

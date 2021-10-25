@@ -149,18 +149,4 @@ public class AuxUtils {
         writer.close();
     }
 
-    /*private static void writeData(Collection<Individual<?, ?, ? extends Outcome>> population, double spectrumMinFreq, double spectrumMaxFreq, int spectrumSize) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("temp.txt"));
-            writer.write("shape.dynamic;compressed.frequency\n");
-            population.forEach(i -> writer.write(String.join(";", Grid.toString(i.getFitness().getAveragePosture(), (Predicate<Boolean>) b -> b, "|"), i.getFitness().getCenterPowerSpectrum(Outcome.Component.Y, spectrumMinFreq, spectrumMaxFreq, spectrumSize).stream()
-                    .map(Outcome.Mode::getStrength)
-                    .collect(Collectors.joining("-")))));
-            writer.close();
-        }
-        catch (IOException ignored) {
-            //ignore
-        }
-    }*/
-
 }

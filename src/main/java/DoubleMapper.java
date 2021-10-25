@@ -74,7 +74,7 @@ public class DoubleMapper extends RobotMapper {
         // fill voxels only for entries > 0.5
         for (double entry : genotype) {
             if (c < this.width * this.height) {
-                if (entry > THRESHOLD) {
+                if (entry > DIRECT_THRESHOLD) {
                     body.set(c % this.width, c / this.width, SerializationUtils.clone(sensingVoxel));
                 } else {
                     body.set(c % this.width, c / this.width, null);
@@ -106,7 +106,7 @@ public class DoubleMapper extends RobotMapper {
         }
         // for each value of values if it is bigger tha a threshold puts a voxel in that position
         for (Grid.Entry<Double> entry : values) {
-            if (entry.getValue() > THRESHOLD) {
+            if (entry.getValue() > GAUSSIAN_THRESHOLD) {
                 body.set(entry.getX(), entry.getY(), SerializationUtils.clone(sensingVoxel));
             } else {
                 body.set(entry.getX(), entry.getY(), null);

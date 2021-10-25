@@ -18,7 +18,8 @@ public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
     protected final List<Sensor> sensors;
     protected final int[] innerNeurons;
     protected final int signals;
-    protected static final double THRESHOLD = 0.0D;
+    protected static final double DIRECT_THRESHOLD = 0.0D;
+    protected static final double GAUSSIAN_THRESHOLD = 0.5D;
     protected static final int NUM_GAUSSIANS = 5;
 
     public RobotMapper(boolean heterogeneous, boolean position, boolean direct, int width, int height, List<Sensor> sensors, int[] innerNeurons, int signals) {
@@ -61,7 +62,7 @@ public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
     public static RobotMapper createMapper(String representation, int width, int height, List<Sensor> sensors, int[] innerNeurons, int signals) {
         String controller = representation.split("-")[1];
         String morphology = representation.split("-")[0];
-        return ("position".equals(controller) ? new DoublePositionMapper(width, height, sensors, innerNeurons, signals) : new DoubleMapper(controller.equals("heterogeneous"), morphology.equals("direct"), width, height, sensors, innerNeurons, signals));
+        return new DoubleMapper(controller.equals("heterogeneous"), morphology.equals("direct"), width, height, sensors, innerNeurons, signals);
     }
 
     public static Robot<?> createMapperAndApplyFromSerialized(List<Double> serialized, int width, int height, List<Sensor> sensors, int[] innerNeurons, int signals) {
@@ -77,7 +78,9 @@ public abstract class RobotMapper implements Function<List<Double>, Robot<?>> {
         else if (serialized.size() == getGenotypeSize(false, false, false, sensors, innerNeurons, signals, width, height)) {
             return (new DoubleMapper(false, false, width, height, sensors, innerNeurons, signals)).apply(serialized);
         }
-        return (new DoublePositionMapper(width, height, sensors, innerNeurons, signals)).apply(serialized);
+        else {
+            throw new IllegalArgumentException(String.format("Unknown serialized size: %d", serialized.size()));
+        }
     }
 
 }

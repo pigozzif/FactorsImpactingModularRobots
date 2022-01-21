@@ -3,7 +3,7 @@ import os
 import sys
 
 
-path = "./output/gmm"
+path = "/Users/federicopigozzi/Desktop/gmm"
 evolver = sys.argv[1]
 pop_size = int(sys.argv[2])
 for file in os.listdir(path):

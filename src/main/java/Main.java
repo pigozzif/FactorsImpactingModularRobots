@@ -37,7 +37,7 @@ import org.dyn4j.dynamics.Settings;
 
 import static it.units.malelab.jgea.core.listener.NamedFunctions.*;
 
-// TODO: all file does not contain basic information, so must rely on population size to deduce iterations (not safe for SE)
+
 public class Main extends Worker {
 
     private static int seed;
@@ -47,7 +47,7 @@ public class Main extends Worker {
     private static double episodeTime;
     private static final double frequencyThreshold = 10.0D;
     private static final int nFrequencySamples = 100;
-    private static String  bestFileName = "./output/gmm/";
+    private static String  bestFileName = "./output/";
     private static String allFileName = "";
     private static Settings physicsSettings;
 

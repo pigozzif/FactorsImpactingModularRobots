@@ -1,61 +1,92 @@
-import it.units.erallab.hmsrobots.core.objects.Robot;
-import it.units.erallab.hmsrobots.tasks.locomotion.Locomotion;
-import it.units.erallab.hmsrobots.tasks.locomotion.Outcome;
-import it.units.erallab.hmsrobots.util.Grid;
-import it.units.erallab.hmsrobots.util.RobotUtils;
-import it.units.erallab.hmsrobots.util.SerializationUtils;
-import org.dyn4j.dynamics.Settings;
 
-import java.io.*;
-import java.util.Objects;
-import java.util.Random;
-import java.util.function.Predicate;
+import it.units.erallab.hmsrobots.util.Grid;
+import org.apache.commons.math3.util.Pair;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class ExtractFeatures {
 
-    private static final String oldDir = "./output/";
-    private static final String newDir = "./output_new/";
-    private static final Locomotion locomotion = new Locomotion(30.0, Locomotion.createTerrain("flat"), new Settings());
-
-    public static void main(String[] args) throws IOException {
-        for (File file : Objects.requireNonNull((new File(oldDir)).listFiles())) {
-            if (!file.getPath().contains("all")) {
-                continue;
-            }
-            BufferedReader reader = new BufferedReader(new FileReader(file.getPath()));
-            createNewFile(reader, file.getPath());
-            reader.close();
+    public static void prettyPrintGrid(Grid<Boolean> g) {
+        for (int i = 0; i < g.getW(); ++i) {
+            int finalI = i;
+            System.out.println("[" + g.stream().filter(e -> e.getY() == finalI).map(e -> String.valueOf(e.getValue())).collect(Collectors.joining(",")) + "]");
         }
     }
 
-    private static void createNewFile(BufferedReader reader, String name) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(name.replace(oldDir, newDir)));
-        writer.write(reader.readLine() + ";shape.dynamic;compressed.frequency\n");
-        String line;
-        Robot<?> robot;
-        Outcome outcome;
-        while (true) {
-            //try {
-                line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-            //}
-            //catch (IOException e) {
-            //    break;
-            //}
-            String[] frags = line.split(";");
-            robot = RobotUtils.buildRobotTransformation("identity", new Random(0))
-                    .apply(SerializationUtils.deserialize(frags[frags.length - 1], Robot.class, SerializationUtils.Mode.valueOf(SerializationUtils.Mode.GZIPPED_JSON.name())));
-            outcome = locomotion.apply(robot);
-            writer.write(line + ";" + Grid.toString(outcome.getAveragePosture(), (Predicate<Boolean>) b -> b,"|") +
-                    ";" + outcome.getCenterPowerSpectrum(Outcome.Component.Y, 0.0, 10.0, 100).stream()
-                    .map(Outcome.Mode::getStrength).map(String::valueOf)
-                    .collect(Collectors.joining("-")) + "\n");
+    public static double shapeElongation(Grid<Boolean> posture, int n) {
+        if (posture.values().stream().noneMatch(e -> e)) {
+            throw new IllegalArgumentException("Grid is empty");
         }
-        writer.close();
+        else if (n <= 0) {
+            throw new IllegalArgumentException(String.format("Non-positive number of directions provided: %d", n));
+        }
+        List<Pair<Integer, Integer>> coordinates = posture.stream().filter(Grid.Entry::getValue).map(e -> new Pair<>(e.getX(), e.getY())).collect(Collectors.toList());
+        List<Double> diameters = new ArrayList<>();
+        for (int i = 0; i < n; ++i) {
+            double theta = (2 * i * Math.PI) / n;
+            List<Pair<Double, Double>> rotatedCoordinates = coordinates.stream().map(p -> new Pair<>(p.getFirst() * Math.cos(theta) - p.getSecond() * Math.sin(theta), p.getFirst() * Math.sin(theta) + p.getSecond() * Math.cos(theta))).collect(Collectors.toList());
+            double minX = rotatedCoordinates.stream().min(Comparator.comparingDouble(Pair::getFirst)).get().getFirst();
+            double maxX = rotatedCoordinates.stream().max(Comparator.comparingDouble(Pair::getFirst)).get().getFirst();
+            double minY = rotatedCoordinates.stream().min(Comparator.comparingDouble(Pair::getSecond)).get().getSecond();
+            double maxY = rotatedCoordinates.stream().max(Comparator.comparingDouble(Pair::getSecond)).get().getSecond();
+            double sideX = maxX - minX + 1;
+            double sideY = maxY - minY + 1;
+            diameters.add(Math.min(sideX, sideY) / Math.max(sideX, sideY));
+        }
+        return 1.0 - Collections.min(diameters);
+    }
+
+    public static double shapeCompactness(Grid<Boolean> posture) {
+        // approximate convex hull
+        Grid<Boolean> convexHull = Grid.create(posture.getW(), posture.getH(), posture::get);
+        boolean none = false;
+        // loop as long as there are false cells have at least five of the eight Moore neighbors as true
+        while (!none) {
+            none = true;
+            for (Grid.Entry<Boolean> entry : convexHull) {
+                if (convexHull.get(entry.getX(), entry.getY())) {
+                    continue;
+                }
+                int currentX = entry.getX();
+                int currentY = entry.getY();
+                int adjacentCount = 0;
+                // count how many of the Moore neighbors are true
+                for (int i : new int[]{1, -1}) {
+                    int neighborX = currentX;
+                    int neighborY = currentY + i;
+                    if (0 <= neighborY && neighborY < convexHull.getH() && convexHull.get(neighborX, neighborY)) {
+                        adjacentCount += 1;
+                    }
+                    neighborX = currentX + i;
+                    neighborY = currentY;
+                    if (0 <= neighborX && neighborX < convexHull.getW() && convexHull.get(neighborX, neighborY)) {
+                        adjacentCount += 1;
+                    }
+                    neighborX = currentX + i;
+                    neighborY = currentY + i;
+                    if (0 <= neighborX && 0 <= neighborY && neighborX < convexHull.getW() && neighborY < convexHull.getH() && convexHull.get(neighborX, neighborY)) {
+                        adjacentCount += 1;
+                    }
+                    neighborX = currentX + i;
+                    neighborY = currentY - i;
+                    if (0 <= neighborX && 0 <= neighborY && neighborX < convexHull.getW() && neighborY < convexHull.getH() && convexHull.get(neighborX, neighborY)) {
+                        adjacentCount += 1;
+                    }
+                }
+                // if at least five, fill the cell
+                if (adjacentCount >= 5) {
+                    convexHull.set(entry.getX(), entry.getY(), true);
+                    none = false;
+                }
+            }
+        }
+        // compute are ratio between convex hull and posture
+        int nVoxels = (int) posture.count(e -> e);
+        int nConvexHull = (int) convexHull.count(e -> e);
+        // -> 0.0 for less compact shapes, -> 1.0 for more compact shapes
+        return (double) nVoxels / nConvexHull;
     }
 
 }

@@ -30,6 +30,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.dyn4j.dynamics.Settings;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.List;
 import java.util.Random;
@@ -52,13 +54,14 @@ public class VideoMaker {
   public static void main(String[] args) throws IOException {
     //get params
     parseRobotFromFile(a(args, "inputFile", null));
+    boolean frames = Boolean.parseBoolean(a(args, "frames", "false"));
     String inputFileName = "to_film.txt";
     String outputFileName = a(args, "outputFile", null);
     String serializedRobotColumn = a(args, "serializedRobotColumnName", "serialized");
     String terrainName = a(args, "terrain", "flat");
     String transformationName = a(args, "transformation", "identity");
-    double startTime = d(a(args, "startTime", "5.0"));
-    double endTime = d(a(args, "endTime", "15.0"));
+    double startTime = d(a(args, "startTime", "0.0"));
+    double endTime = d(a(args, "endTime", "30.0"));
     int w = i(a(args, "w", "900"));
     int h = i(a(args, "h", "600"));
     int frameRate = i(a(args, "frameRate", "30"));
@@ -136,6 +139,15 @@ public class VideoMaker {
             Locomotion.createTerrain(terrainName),
             new Settings()
     );
+    if (frames) {
+      FramesImageBuilder framesImageBuilder = new FramesImageBuilder(
+              5, 6.25, 0.25, 300, 300, FramesImageBuilder.Direction.HORIZONTAL);
+      //);
+      locomotion.apply(namedRobotGrid.get(0, 0).getValue(), framesImageBuilder);
+      BufferedImage image = framesImageBuilder.getImage();
+      ImageIO.write(image, "png", new File(outputFileName));
+      return;
+    }
     //do simulations
     ScheduledExecutorService uiExecutor = Executors.newScheduledThreadPool(4);
     ExecutorService executor = Executors.newCachedThreadPool();
@@ -181,7 +193,7 @@ public class VideoMaker {
     }
   }
 
-  private static void parseRobotFromFile(String file) throws IOException {
+  public static void parseRobotFromFile(String file) throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter("to_film.txt"));
     Reader reader = new FileReader(file);
     List<CSVRecord> records;

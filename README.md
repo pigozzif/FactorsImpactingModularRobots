@@ -33,14 +33,4 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 * threads: the number of threads to perform evolution with. Defaults to the number of available cores on the current CPU. Parallelization is taken care by JGEA and implements a distributed fitness assessment.
 
 ## Bibliography
-Medvet, Pigozzi, Bartoli, Rochelli; [Biodiversity in Evolved Voxel-based Soft Robots](https://dl.acm.org/doi/10.1145/3449639.3459315?sid=SCITRUS); ACM Genetic and Evolutionary Computation Conference (GECCO); 2021
-```
-@inproceedings{medvet2021biodiversity,
-    author = {Medvet, Eric and Bartoli, Alberto and Pigozzi, Federico and Rochelli, Marco},
-    title = {Biodiversity in Evolved Voxel-Based Soft Robots}, 
-    year = {2021}, isbn = {9781450383509},
-    booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference},
-    pages = {129–137},
-    series = {GECCO '21}
-}
-```
+TODO, if accepted

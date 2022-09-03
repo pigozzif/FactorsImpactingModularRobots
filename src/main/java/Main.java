@@ -110,12 +110,12 @@ public class Main extends Worker {
     }
 
     private Collection<Robot<?>> evolveCMAES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new BasicEvolutionaryStrategy<>(/*new CMAESEvolver<>(*/mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new BasicEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 
     private Collection<Robot<?>> evolveGA(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new StandardEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D), new Tournament(5), new Worst(), 100, true, false);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new StandardEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)).andThen(new GaussianMutation(0.1D)), 0.08D), new Tournament(5), new Worst(), 100, true, false);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 

@@ -95,11 +95,12 @@ public class Main extends Worker {
             Stopwatch stopwatch = Stopwatch.createStarted();
             L.info(String.format("Starting %s", bestFileName));
             Collection<Robot<?>> solutions = switch (evolverName) {
-                case "es" -> this.evolveCMAES(factory, mapper, trainingTask);
+                case "es" -> this.evolveES(factory, mapper, trainingTask);
                 case "ga" -> this.evolveGA(factory, mapper, trainingTask);
                 case "se-geno" -> this.evolveSEgeno(factory, mapper, trainingTask);
                 case "se-shape" -> this.evolveSEshape(factory, mapper, trainingTask);
                 case "se-behaviour" -> this.evolveSEbehaviour(factory, mapper, trainingTask);
+                case "map-elites" -> this.evolveMAPElites(factory, mapper, trainingTask);
                 default -> throw new IllegalArgumentException("Unknown evolver name: " + evolverName);
             };
             L.info(String.format("Done %s: %d solutions in %4ds", bestFileName, solutions.size(), stopwatch.elapsed(TimeUnit.SECONDS)));
@@ -110,8 +111,8 @@ public class Main extends Worker {
         }
     }
 
-    private Collection<Robot<?>> evolveCMAES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new BasicEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
+    private Collection<Robot<?>> evolveES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new CanonicalEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 20);  //BasicEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 
@@ -142,6 +143,11 @@ public class Main extends Worker {
     private Collection<Robot<?>> evolveSEbehaviour(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
         Evolver<List<Double>, Robot<?>, Outcome> evolver = new SpeciatedEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)), 0.08D),
                 5, new KMeansSpeciator<>(10, 200, new LNorm(2), individual -> individual.getFitness().getCenterPowerSpectrum(Component.Y, 0, frequencyThreshold, nFrequencySamples).stream().mapToDouble(Outcome.Mode::getStrength).toArray()), 0.75, false);
+        return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
+    }
+
+    private Collection<Robot<?>> evolveMAPElites(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = null;//new MAPElitesEvolver<>(, , , , mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), , , , );
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 

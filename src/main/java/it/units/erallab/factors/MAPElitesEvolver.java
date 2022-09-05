@@ -53,22 +53,22 @@ public class MAPElitesEvolver<S, F> extends AbstractIterativeEvolver<List<Double
 
     L.fine(String.format("Population initialized: %d individuals", population.size()));
     population.addAll(newPops);
+    DAGPartiallyOrderedCollection<Individual<List<Double>,S,F>> newPopsAdded = new DAGPartiallyOrderedCollection<>(population.lastAddedPerformance, individualComparator);
     while (true) {
 
       state.setElapsedMillis(stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-      Event<List<Double>, S, F> event = new Event<>(state, population);//, newPopsAdded);//, null);
-
+      MAPElitesEvent<List<Double>, S, F> event = new MAPElitesEvent<>(state, population, newPopsAdded, null);
       listener.listen(event);
       if (stopCondition.test(event)) {
-        System.out.println(population.values().size()+" not recorded "+ population.notAdded+" updated "+population.updated);
+        System.out.println(population.values().size() + " not recorded " + population.notAdded + " updated " + population.updated);
         L.fine(String.format("Stop condition met: %s", stopCondition));
         break;
       }
 
       newPops = updatePopulation(population, fitnessFunction, random, executor, state);
       population.addAll(newPops);
-      new DAGPartiallyOrderedCollection<>(population.lastAddedPerformance, individualComparator);
+      newPopsAdded = new DAGPartiallyOrderedCollection<>(population.lastAddedPerformance, individualComparator);
       L.fine(String.format("Population updated: %d individuals", population.size()));
       state.incIterations(1);
     }

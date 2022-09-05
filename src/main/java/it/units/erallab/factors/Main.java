@@ -7,6 +7,8 @@ import it.units.erallab.hmsrobots.core.sensors.Sensor;
 import it.units.erallab.hmsrobots.tasks.locomotion.Locomotion;
 import it.units.erallab.hmsrobots.tasks.locomotion.Outcome;
 import it.units.erallab.hmsrobots.tasks.locomotion.Outcome.Component;
+import it.units.erallab.hmsrobots.util.Grid;
+import it.units.erallab.hmsrobots.util.Utils;
 import it.units.malelab.jgea.Worker;
 import it.units.malelab.jgea.core.IndependentFactory;
 import it.units.malelab.jgea.core.Individual;
@@ -147,8 +149,26 @@ public class Main extends Worker {
     }
 
     private Collection<Robot<?>> evolveMAPElites(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = null;//new MAPElitesEvolver<>(, , , , mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), , , , );
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new MAPElitesEvolver<>(x -> List.of((double) x.getSolution().getVoxels().count(Objects::nonNull), ExtractFeatures.shapeCompactness(Grid.create(10, 10, (i, j) -> x.getSolution().getVoxels().get(i, j) != null)), ExtractFeatures.shapeElongation(Grid.create(10, 10, (i, j) -> x.getSolution().getVoxels().get(i, j) != null), 8)), List.of(10.0, 10.0), List.of(0.0, 0.0), List.of(10, 10), mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), new GaussianMutation(0.35), 20, 20, x -> x.getFitness().getVelocity());
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
+    }
+
+    private List<Double> getSpectrumDescriptor(Individual<List<Double>, Robot<?>, Outcome> ind) {
+        Outcome o = ind.getFitness();
+        double[] xSpectrum = o.getCenterPowerSpectrum(Outcome.Component.X, 0.0, frequencyThreshold, nFrequencySamples).stream()
+                .mapToDouble(Outcome.Mode::getStrength)
+                .toArray();
+        double[] ySpectrum = o.getCenterPowerSpectrum(Outcome.Component.Y, 0.0, frequencyThreshold, nFrequencySamples).stream()
+                .mapToDouble(Outcome.Mode::getStrength)
+                .toArray();
+        double[] spectrum = new double[nFrequencySamples * 2];
+        System.arraycopy(xSpectrum, 0, spectrum, 0, nFrequencySamples);
+        System.arraycopy(ySpectrum, 0, spectrum, nFrequencySamples, nFrequencySamples);
+        List<Double> descriptors = new ArrayList<>();
+        for (double d : spectrum){
+            descriptors.add(d);
+        }
+        return descriptors;
     }
 
     private static Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> createListenerFactory() {

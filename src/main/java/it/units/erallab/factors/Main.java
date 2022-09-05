@@ -112,7 +112,7 @@ public class Main extends Worker {
     }
 
     private Collection<Robot<?>> evolveES(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new CanonicalEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 20);  //BasicEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new CanonicalEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4);  //BasicEvolutionaryStrategy<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 0.35, 40, 40 / 4, 1, true);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 

@@ -8,7 +8,6 @@ import it.units.erallab.hmsrobots.tasks.locomotion.Locomotion;
 import it.units.erallab.hmsrobots.tasks.locomotion.Outcome;
 import it.units.erallab.hmsrobots.tasks.locomotion.Outcome.Component;
 import it.units.erallab.hmsrobots.util.Grid;
-import it.units.erallab.hmsrobots.util.Utils;
 import it.units.malelab.jgea.Worker;
 import it.units.malelab.jgea.core.IndependentFactory;
 import it.units.malelab.jgea.core.Individual;
@@ -20,8 +19,8 @@ import it.units.malelab.jgea.core.listener.CSVPrinter;
 import it.units.malelab.jgea.core.listener.Listener;
 import it.units.malelab.jgea.core.listener.NamedFunction;
 import it.units.malelab.jgea.core.order.PartialComparator;
+import it.units.malelab.jgea.core.selector.Last;
 import it.units.malelab.jgea.core.selector.Tournament;
-import it.units.malelab.jgea.core.selector.Worst;
 import it.units.malelab.jgea.core.util.Args;
 import it.units.malelab.jgea.core.util.Misc;
 import it.units.malelab.jgea.distance.LNorm;
@@ -119,7 +118,7 @@ public class Main extends Worker {
     }
 
     private Collection<Robot<?>> evolveGA(IndependentFactory<List<Double>> factory, RobotMapper mapper, Function<Robot<?>, Outcome> trainingTask) throws ExecutionException, InterruptedException {
-        Evolver<List<Double>, Robot<?>, Outcome> evolver = new StandardEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)).andThen(new GaussianMutation(0.1D)), 0.08D), new Tournament(5), new Worst(), 100, true, false);
+        Evolver<List<Double>, Robot<?>, Outcome> evolver = new StandardEvolver<>(mapper, factory, PartialComparator.from(Outcome.class).reversed().comparing(Individual::getFitness), 100, Map.of(new GaussianMutation(0.35D), 0.02D, new GeometricCrossover(Range.closed(-1.0D, 2.0D)).andThen(new GaussianMutation(0.1D)), 0.08D), new Tournament(5), new Last(), 100, true, false);
         return evolver.solve(trainingTask, new Births(nBirths), new Random(seed), this.executorService, createListenerFactory().build());
     }
 

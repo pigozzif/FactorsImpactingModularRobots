@@ -46,7 +46,7 @@ public class MAPElitesEvolver<S, F> extends AbstractIterativeEvolver<List<Double
   }
 
   @Override
-  public Collection<S> solve(Function<S, F> fitnessFunction, Predicate<? super Event<List<Double>, S, F>> stopCondition, Random random, ExecutorService executor, Listener<? super Event<List<Double>, S, F>> listener) throws InterruptedException, ExecutionException {
+  public Collection<S> solve(Function<S, F> fitnessFunction, Predicate<? super it.units.malelab.jgea.core.evolver.Event<List<Double>, S, F>> stopCondition, Random random, ExecutorService executor, Listener<? super it.units.malelab.jgea.core.evolver.Event<List<Double>, S, F>> listener) throws InterruptedException, ExecutionException {
     State state = initState();
     Stopwatch stopwatch = Stopwatch.createStarted();
     Collection<Individual<List<Double>,S,F>> newPops = initPopulation(fitnessFunction, random, executor, state);
@@ -58,7 +58,7 @@ public class MAPElitesEvolver<S, F> extends AbstractIterativeEvolver<List<Double
 
       state.setElapsedMillis(stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-      MAPElitesEvent<List<Double>, S, F> event = new MAPElitesEvent<>(state, population, newPopsAdded, null);
+      Event<List<Double>, S, F> event = new Event<>(state, population, newPopsAdded, null);
       listener.listen(event);
       if (stopCondition.test(event)) {
         System.out.println(population.values().size() + " not recorded " + population.notAdded + " updated " + population.updated);

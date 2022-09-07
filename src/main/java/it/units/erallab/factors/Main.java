@@ -180,7 +180,7 @@ public class Main extends Worker {
         List<NamedFunction<Outcome, ?>> detailedOutcomeFunctions = AuxUtils.detailedOutcomeFunctions(0.0, frequencyThreshold, nFrequencySamples);
         Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> factory = Listener.Factory.deaf();
         // file listeners
-        if (bestFileName != null) {
+        if (bestFileName != null && evolverName != "map-elites") {
             factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(
                     basicFunctions,
                     populationFunctions,

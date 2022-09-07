@@ -101,7 +101,7 @@ public class Main extends Worker {
                 case "se-geno" -> this.evolveSEgeno(factory, mapper, trainingTask);
                 case "se-shape" -> this.evolveSEshape(factory, mapper, trainingTask);
                 case "se-behaviour" -> this.evolveSEbehaviour(factory, mapper, trainingTask);
-                case "map-elites" -> this.evolveMAPElites(factory, mapper, trainingTask);
+                case "me" -> this.evolveMAPElites(factory, mapper, trainingTask);
                 default -> throw new IllegalArgumentException("Unknown evolver name: " + evolverName);
             };
             L.info(String.format("Done %s: %d solutions in %4ds", bestFileName, solutions.size(), stopwatch.elapsed(TimeUnit.SECONDS)));
@@ -180,7 +180,7 @@ public class Main extends Worker {
         List<NamedFunction<Outcome, ?>> detailedOutcomeFunctions = AuxUtils.detailedOutcomeFunctions(0.0, frequencyThreshold, nFrequencySamples);
         Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> factory = Listener.Factory.deaf();
         // file listeners
-        if (bestFileName != null && !evolverName.equals("map-elites")) {
+        if (bestFileName != null && !evolverName.equals("me")) {
             factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(
                     basicFunctions,
                     populationFunctions,

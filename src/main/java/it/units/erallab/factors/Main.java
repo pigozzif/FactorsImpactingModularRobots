@@ -180,14 +180,14 @@ public class Main extends Worker {
         List<NamedFunction<Outcome, ?>> detailedOutcomeFunctions = AuxUtils.detailedOutcomeFunctions(0.0, frequencyThreshold, nFrequencySamples);
         Listener.Factory<Event<?, ? extends Robot<?>, ? extends Outcome>> factory = Listener.Factory.deaf();
         // file listeners
-        if (bestFileName != null && !evolverName.equals("me")) {
+        if (bestFileName != null) {
             factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(
                     basicFunctions,
                     populationFunctions,
-                    NamedFunction.then(best(), basicIndividualFunctions),
-                    NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), basicOutcomeFunctions),
-                    NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), detailedOutcomeFunctions),
-                    NamedFunction.then(best(), AuxUtils.serializationFunction(true))
+                    //NamedFunction.then(best(), basicIndividualFunctions),
+                    //NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), basicOutcomeFunctions),
+                    //NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), detailedOutcomeFunctions),
+                    //NamedFunction.then(best(), AuxUtils.serializationFunction(true))
             )), new File(bestFileName)
             ));
         }

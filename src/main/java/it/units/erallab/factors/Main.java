@@ -183,11 +183,7 @@ public class Main extends Worker {
         if (bestFileName != null) {
             factory = factory.and(new CSVPrinter<>(Misc.concat(List.of(
                     basicFunctions,
-                    populationFunctions,
-                    //NamedFunction.then(best(), basicIndividualFunctions),
-                    //NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), basicOutcomeFunctions),
-                    //NamedFunction.then(as(Outcome.class).of(fitness()).of(best()), detailedOutcomeFunctions),
-                    //NamedFunction.then(best(), AuxUtils.serializationFunction(true))
+                    populationFunctions
             )), new File(bestFileName)
             ));
         }

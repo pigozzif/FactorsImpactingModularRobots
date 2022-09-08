@@ -1,0 +1,14 @@
+it/units/erallab/factors/CanonicalEvolutionaryStrategy$CanonicalESState.class
+it/units/erallab/factors/Constant.class
+it/units/erallab/factors/GaussianFactory.class
+it/units/erallab/factors/CanonicalEvolutionaryStrategy.class
+it/units/erallab/factors/MAPElitesEvolver.class
+it/units/erallab/factors/RobotMapper.class
+it/units/erallab/factors/ExtractFeatures.class
+it/units/erallab/factors/AuxUtils.class
+it/units/erallab/factors/Main.class
+it/units/erallab/factors/RobotMapper$1.class
+it/units/erallab/factors/VideoMaker.class
+it/units/erallab/factors/MAPElitesPopulation.class
+it/units/erallab/factors/DoubleMapper.class
+it/units/erallab/factors/DatasetMaker.class

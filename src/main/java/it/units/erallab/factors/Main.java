@@ -191,6 +191,8 @@ public class Main extends Worker {
             factory = factory.and(Listener.Factory.forEach(
                     event -> event.getOrderedPopulation().all(),
                     new CSVPrinter<>(Misc.concat(List.of(
+                            NamedFunction.then(as(Individual.class),
+                                List.of(f("iterations", x -> ((Individual<?, ? extends Robot<?>, ? extends Outcome>) x).getBirthIteration()))),
                             NamedFunction.then(as(Outcome.class).of(fitness()), detailedOutcomeFunctions),
                             NamedFunction.then(as(Outcome.class).of(fitness()), basicOutcomeFunctions),
                             basicIndividualFunctions,

@@ -1,6 +1,10 @@
 # Factors impacting diversity and effectiveness of evolved modular robots
 This is the official repository for the ACM TELO (Transactions on Evolutionary Learning and Optimization) paper "Factors impacting diversity and effectiveness of evolved modular robots", hosting all the code necessary to replicate the experiments. This work was carried on at the Evolutionary Robotics and Artificial Life Laboratory (ERALLab) at the Department of Engineering and Architecture, University of Trieste (Italy).
 
+<div align="center">
+<img src="teaser.gif"></img>
+</div>
+
 ## Scope
 By running
 ```

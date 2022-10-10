@@ -40,5 +40,7 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 * seed: the random seed for the experiment.
 * threads: the number of threads to perform evolution with. Defaults to the number of available cores on the current CPU. Parallelization is taken care by JGEA and implements a distributed fitness assessment.
 
+Evolution output files contain the serialized best individual for every generation, that can be deserialized to compute any necessary shape or behavior feature.
+
 ## Bibliography
 TODO, if accepted

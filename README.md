@@ -47,4 +47,14 @@ where {...} denotes a finite and discrete set of possible choices for the corres
 Evolution output files contain the serialized best individual for every generation, that can be deserialized to compute any necessary shape or behavior feature.
 
 ## Bibliography
-TODO, if accepted
+```
+@article{pigozzi2023factors,
+  title={Factors Impacting Diversity and Effectiveness of Evolved Modular Robots},
+  author={Pigozzi, Federico and Medvet, Eric and Bartoli, Alberto and Rochelli, Marco},
+  journal={ACM Transactions on Evolutionary Learning},
+  volume={3},
+  number={1},
+  pages={1--33},
+  year={2023}
+}
+```
